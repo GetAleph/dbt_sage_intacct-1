@@ -1,14 +1,14 @@
 with gl_detail as (
+
     select * 
     from {{ ref('stg_sage_intacct__gl_detail') }} 
-),
 
-gl_account as (
+), gl_account as (
+
     select * 
     from {{ ref('int_sage_intacct__account_classifications') }} 
-),
 
-general_ledger as (
+), general_ledger as (
 
     select 
 
@@ -42,13 +42,27 @@ general_ledger as (
     gld.due_at,
     gld.modified_at,
     gld.paid_at,
+    {% if var('sage_gl_detail_pass_through_columns') %}
+
+    gld.{{ var('sage_gl_detail_pass_through_columns') | join (", gld.")}} ,
+
+    {% endif %}
     gla.category,
     gla.classification,
     gla.account_type 
+
+    --The below script allows for pass through columns.
+    
+    {% if var('sage_account_pass_through_columns') %} 
+    ,
+    {{ var('sage_account_pass_through_columns') | join (", ")}}
+
+    {% endif %}
 
     from gl_detail gld
     left join gl_account gla
     on gld.account_no = gla.account_no 
 )
 
-select * from general_ledger
+select * 
+from general_ledger
